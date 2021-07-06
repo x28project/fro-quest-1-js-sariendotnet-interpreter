@@ -1,5 +1,4 @@
 /// <reference path="agent.js" />
-/// <reference path="view.js" />
 /// <reference path="agi.js" />
 /// <reference path="canvas.js" />
 /// <reference path="commands.js" />
@@ -15,8 +14,7 @@
 /// <reference path="view.js" />
 
 // Singleton class for displaying text and dialogs
-var Text =
-{
+var Text = {
   cols: 40, // x
   rows: 25, // y
   queue: [],
@@ -34,54 +32,51 @@ var Text =
   hideMessageTimer: 0, // used for automatically hiding messages after a timer
 
   // upon initialization, map the dialog element
-  init: function() {
-    Text.dialog = document.getElementById("dialog");
+  init: function () {
+    Text.dialog = document.getElementById('dialog');
   },
   // clear all text
-  clear: function() {
-    for (var y = 0; y < Text.rows; y++)
-      Text.clearLine(y);
+  clear: function () {
+    for (var y = 0; y < Text.rows; y++) Text.clearLine(y);
     if (AGI.screen == s_text_screen) {
-    }
-    else {
+    } else {
       //IO.showCommandLine();
     }
   },
   // clear a single line of characters
-  clearLine: function(y) {
-    for (var x = 0; x < Text.cols; x++)
-      Text.clearPos(x, y);
+  clearLine: function (y) {
+    for (var x = 0; x < Text.cols; x++) Text.clearPos(x, y);
   },
-  // clear a character at position x,y 
-  clearPos: function(x, y) {
+  // clear a character at position x,y
+  clearPos: function (x, y) {
     var el = Text.lines[y * Text.cols + x];
     if (el && el.parentNode) {
       el.parentNode.removeChild(el);
-      delete el;
+      //delete el;
     }
   },
   // adds a character c to position x,y with colors fg and bg
-  addChar: function(x, y, c, fg, bg) {
+  addChar: function (x, y, c, fg, bg) {
     Text.clearPos(x, y);
-    var el = document.createElement("div");
+    var el = document.createElement('div');
     el.innerHTML = c;
-    el.style.left = ((x * 8 * AGI.zoom) + AGI.zoom) + "px";
-    el.style.top = (((y - 1) * 8 * AGI.zoom) - AGI.zoom + 2) + "px";
-    el.className = "char";
-    if (!isNaN(fg)) el.className += " char_fg_" + fg;
-    if (!isNaN(bg)) el.className += " char_bg_" + bg;
-    
-    el.style.zIndex = (9999 - y);
-    
-    document.getElementById("canvas").appendChild(el);
+    el.style.left = x * 8 * AGI.zoom + AGI.zoom + 'px';
+    el.style.top = (y - 1) * 8 * AGI.zoom - AGI.zoom + 2 + 'px';
+    el.className = 'char';
+    if (!isNaN(fg)) el.className += ' char_fg_' + fg;
+    if (!isNaN(bg)) el.className += ' char_bg_' + bg;
+
+    el.style.zIndex = 9999 - y;
+
+    document.getElementById('canvas').appendChild(el);
     Text.lines[y * Text.cols + x] = el;
   },
   // adds a line of text to position x,y with colors fg,bg
-  add: function(x, y, s, fg, bg) {
+  add: function (x, y, s, fg, bg) {
     var eol = s.indexOf('\n');
     var remainder = 0;
     if (eol > -1) {
-      remainder = s.substr(eol + 1).replace(/^\s/, "");
+      remainder = s.substr(eol + 1).replace(/^\s/, '');
       s = s.substr(0, eol);
     }
 
@@ -90,11 +85,10 @@ var Text =
       Text.addChar(x + i, y, c, fg, bg);
     }
 
-    if (remainder)
-      Text.add(x, y + 1, remainder, fg, bg);
+    if (remainder) Text.add(x, y + 1, remainder, fg, bg);
   },
   // hides a message
-  hideMessage: function() {
+  hideMessage: function () {
     clearTimeout(Text.hideMessageTimer);
     if (Text.visibleInventoryItem) {
       Text.hideInventoryItem();
@@ -103,10 +97,9 @@ var Text =
     if (IO.commandLineIsVisible) {
       IO.showCommandLine();
     }
-    Text.dialog.style.display = "none";
+    Text.dialog.style.display = 'none';
     Text.messageShown = false;
-    if (Text.queue.length > 0)
-      Text.nextMessage();
+    if (Text.queue.length > 0) Text.nextMessage();
     else {
       // optionally execute the afterHideMessageHandler
       var f = Text.afterHideMessageHandler;
@@ -115,19 +108,17 @@ var Text =
     }
   },
   // shows a message
-  displayMessage: function(msg, idInventory) {
+  displayMessage: function (msg, idInventory) {
     Text.queue.push(msg);
     if (idInventory) {
       Text.queueInventory.push(idInventory);
-    }
-    else {
+    } else {
       Text.queueInventory.push(null);
     }
-    if (Text.queue.length == 1 && !Text.messageShown)
-      Text.nextMessage();
+    if (Text.queue.length == 1 && !Text.messageShown) Text.nextMessage();
   },
   nextMessageTimeout: null,
-  nextMessage: function() {
+  nextMessage: function () {
     Text.queue.reverse();
     var msg = Text.queue.pop();
     Text.queue.reverse();
@@ -135,8 +126,7 @@ var Text =
     var idInventory = Text.queueInventory.pop();
     Text.queueInventory.reverse();
 
-    if (Test.playing)
-      return Test.displayMessage(msg);
+    if (Test.playing) return Test.displayMessage(msg);
     //msg = msg.replace(/^\s+|\s+$/, "");
 
     msg = Text.parseMessage(msg);
@@ -147,8 +137,7 @@ var Text =
     // double check that lines actually do have content to display
     var isEmpty = true;
     for (var i = 0; i < lines.length; i++)
-      if (lines[i].replace(/\s/g, "").length != 0)
-      isEmpty = false;
+      if (lines[i].replace(/\s/g, '').length != 0) isEmpty = false;
     if (isEmpty) return;
 
     // clear a previous message
@@ -162,27 +151,28 @@ var Text =
     var width = 0;
     for (var i = 0; i < lines.length; i++)
       width = Math.max(width, lines[i].length);
-    var y = 11 - (Math.ceil(height / 2));
-    var x = 20 - (Math.ceil(width / 2));
+    var y = 11 - Math.ceil(height / 2);
+    var x = 20 - Math.ceil(width / 2);
     for (var i = 0; i < height; i++) {
       Text.add(x, y + i, lines[i], 0);
     }
 
     // display the background and message
-    Text.dialog.style.display = "block";
-    Text.dialog.style.left = ((((x - 1) * 8 * AGI.zoom) + AGI.zoom) - 6) + "px";
-    Text.dialog.style.top = ((((y - 2) * 8 * AGI.zoom) - AGI.zoom) + 8) + "px";
-    Text.dialog.style.width = ((((width + 2) * 8 * AGI.zoom) + AGI.zoom) + 4) + "px";
-    Text.dialog.style.height = ((((height + 2) * 8 * AGI.zoom) - AGI.zoom) - 7) + "px";
+    Text.dialog.style.display = 'block';
+    Text.dialog.style.left = (x - 1) * 8 * AGI.zoom + AGI.zoom - 6 + 'px';
+    Text.dialog.style.top = (y - 2) * 8 * AGI.zoom - AGI.zoom + 8 + 'px';
+    Text.dialog.style.width = (width + 2) * 8 * AGI.zoom + AGI.zoom + 4 + 'px';
+    Text.dialog.style.height =
+      (height + 2) * 8 * AGI.zoom - AGI.zoom - 7 + 'px';
     Text.messageShown = true;
-    
+
     if (idInventory) {
       // load a view with loop 0 and cel 0 and position it center/bottom
       var view = new View();
       view.load(idInventory);
       view.show();
       view.setPriority(15);
-      var x = Math.round(80 - (view.width() / 2));
+      var x = Math.round(80 - view.width() / 2);
       var y = 168;
       view.position(x, y);
       Text.visibleInventoryItem = view;
@@ -195,13 +185,12 @@ var Text =
     //        setTimeout(AGI.unpause, seconds * 1000);
     //      }
     //    }
-    
-    
+
     if (!cmd_isset(15)) {
       var seconds = vars[var_window_close_time];
       if (seconds > 0) {
         seconds = seconds / 2;
-        Text.nextMessageTimeout = setTimeout(function() {
+        Text.nextMessageTimeout = setTimeout(function () {
           if (waiting) {
             if (!Text.messageShown) {
               IO.key_pressed = true;
@@ -219,25 +208,24 @@ var Text =
     }
   },
   // breaks up a string in lines
-  getLines: function(msg, cols) {
+  getLines: function (msg, cols) {
     var lines = [];
     while (msg.length > cols || msg.indexOf('\n') != -1) {
       var lineBreak = Text.getLineBreak(msg, cols);
-      var line = msg.substr(0, lineBreak);//.replace(/^\s|\s$/g, "");
+      var line = msg.substr(0, lineBreak); //.replace(/^\s|\s$/g, "");
       if (line.indexOf('\n') != -1) {
-        line = line.replace(/\n$/g, "");
-      }
-      else {
-        line = line.replace(/\s$/g, "");
+        line = line.replace(/\n$/g, '');
+      } else {
+        line = line.replace(/\s$/g, '');
       }
       msg = msg.substr(lineBreak);
       lines.push(line);
     }
-    lines.push(msg);//.replace(/^\s|\s$/g, ""));
+    lines.push(msg); //.replace(/^\s|\s$/g, ""));
     return lines;
   },
   // gets the best linebreak position
-  getLineBreak: function(line, cols) {
+  getLineBreak: function (line, cols) {
     line = line.substr(0, cols);
     var max = line.indexOf('\n');
     if (max == -1) {
@@ -251,39 +239,46 @@ var Text =
     return max + 1;
   },
   // prompts for user input
-  getInput: function(msg) {
+  getInput: function (msg) {
     var result;
-    if (Test.playing)
-      result = Test.playInput(msg);
-    else
-      result = prompt(msg);
-    if (Test.recording)
-      Test.recordInput(result);
+    if (Test.playing) result = Test.playInput(msg);
+    else result = prompt(msg);
+    if (Test.recording) Test.recordInput(result);
     return result;
   },
   // parses a message and replaces certain variable indexes by their values
-  parseMessage: function(msg) {
+  parseMessage: function (msg) {
     // if msg was passed by reference, look it up in the MESSAGES table for the current room
-    if (!isNaN(msg))
-      msg = MESSAGES[AGI.current_logic][msg];
-    if (!msg)
-      msg = "";
-    msg = msg.replace(/\\/g, "");
+    if (!isNaN(msg)) msg = MESSAGES[AGI.current_logic][msg];
+    if (!msg) msg = '';
+    msg = msg.replace(/\\/g, '');
     //msg = msg.replace(/%s(\d+)/g, function(a, b) { return strings[b]; });
-    msg = msg.replace(/%s(\d+)/g, function(a, b) { return MESSAGES[AGI.current_logic][strings[b]]; });
-    msg = msg.replace(/%v(\d+)/g, function(a, b) { return vars[b]; });
-    msg = msg.replace(/%m(\d+)/g, function(a, b) { return MESSAGES[AGI.current_logic][b]; });
-    msg = msg.replace(/%g(\d+)/g, function(a, b) { return MESSAGES[0][b]; });
-    msg = msg.replace(/%w(\d+)/g, function(a, b) { b--; return IO.lastTokens.length > (b - 1) ? IO.lastTokens[b] : "[word]"; });
-    if (window["INVENTORY"])
-      msg = msg.replace(/%(\d+)/g, function(a, b) { return window["INVENTORY"][b]; });
+    msg = msg.replace(/%s(\d+)/g, function (a, b) {
+      return MESSAGES[AGI.current_logic][strings[b]];
+    });
+    msg = msg.replace(/%v(\d+)/g, function (a, b) {
+      return vars[b];
+    });
+    msg = msg.replace(/%m(\d+)/g, function (a, b) {
+      return MESSAGES[AGI.current_logic][b];
+    });
+    msg = msg.replace(/%g(\d+)/g, function (a, b) {
+      return MESSAGES[0][b];
+    });
+    msg = msg.replace(/%w(\d+)/g, function (a, b) {
+      b--;
+      return IO.lastTokens.length > b - 1 ? IO.lastTokens[b] : '[word]';
+    });
+    if (window['INVENTORY'])
+      msg = msg.replace(/%(\d+)/g, function (a, b) {
+        return window['INVENTORY'][b];
+      });
     return msg;
   },
   // shows the given inventory object and displays its description message
-  showInventoryItem: function(id) {
+  showInventoryItem: function (id) {
     var description = VIEWS[id][0];
-    if (!description)
-      return Text.displayMessage("There's nothing to see.");
+    if (!description) return Text.displayMessage("There's nothing to see.");
     Text.displayMessage(description, id);
     // load a view with loop 0 and cel 0 and position it center/bottom
     /*var view = new View();
@@ -296,8 +291,8 @@ var Text =
     Text.visibleInventoryItem = view;*/
   },
   // hides a visible inventory item
-  hideInventoryItem: function() {
+  hideInventoryItem: function () {
     Text.visibleInventoryItem.remove();
     Text.visibleInventoryItem = null;
-  }
+  },
 };

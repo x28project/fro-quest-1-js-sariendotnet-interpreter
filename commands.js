@@ -1,11 +1,10 @@
-/// <reference path="MultiplayerClient.js" />
 /// <reference path="agent.js" />
-/// <reference path="view.js" />
 /// <reference path="agi.js" />
 /// <reference path="canvas.js" />
 /// <reference path="hacks.js" />
 /// <reference path="io.js" />
 /// <reference path="menu.js" />
+/// <reference path="MultiplayerClient.js" />
 /// <reference path="picture.js" />
 /// <reference path="reservedwords.js" />
 /// <reference path="sarien.js" />
@@ -74,7 +73,7 @@ function cmd_new_room(roomNr) {
   Sarien.updateAddressBar(roomNr);
   cmd_graphics();
   AGI.highestObjIndex = 1;
-};
+}
 // operational commands
 function cmd_equaln(vn, value) {
   return vars[vn] == value;
@@ -114,17 +113,15 @@ function cmd_issetv(n) {
 }
 function cmd_reset(fn) {
   flags[fn] = 0;
-};
+}
 function cmd_reset_v(vn) {
   flags[vars[vn]] = 0;
-};
+}
 function cmd_decrement(vn) {
-  if (vars[vn] > 0)
-    vars[vn]--;
+  if (vars[vn] > 0) vars[vn]--;
 }
 function cmd_increment(vn) {
-  if (vars[vn] < 255)
-    vars[vn]++;
+  if (vars[vn] < 255) vars[vn]++;
 }
 function cmd_addn(vn, value) {
   vars[vn] += value;
@@ -136,13 +133,11 @@ function cmd_addv(vn, vn2) {
 }
 function cmd_subn(vn, value) {
   vars[vn] -= value;
-  if (vars[vn] < 0)
-    vars[vn] += 256;
+  if (vars[vn] < 0) vars[vn] += 256;
 }
 function cmd_subv(vn, vn2) {
   vars[vn] -= vars[vn2];
-  if (vars[vn] < 0)
-    vars[vn] += 256;
+  if (vars[vn] < 0) vars[vn] += 256;
 }
 function cmd_muln(vn, value) {
   vars[vn] *= value;
@@ -175,12 +170,9 @@ function cmd_toggle_v(vn) {
 }
 function cmd_random(min, max, vn) {
   var rnd;
-  if (Test.playing)
-    rnd = Test.playRandom();
-  else
-    rnd = Utils.Random(min, max);
-  if (Test.recording)
-    Test.recordRandom(rnd);
+  if (Test.playing) rnd = Test.playRandom();
+  else rnd = Utils.Random(min, max);
+  if (Test.recording) Test.recordRandom(rnd);
   vars[vn] = rnd;
 }
 // Object control commands
@@ -206,33 +198,28 @@ function cmd_unanimate_all() {
   }
 }
 function cmd_set_view(i, view) {
-  if (avatarNames[view])
-    IO.avatars[view] = 1;
+  if (avatarNames[view]) IO.avatars[view] = 1;
   var obj = getObject(i);
   obj.load(view);
-  if (obj.loop >= obj.loopCount())
-    obj.loop = 0;
-  if (obj.cel >= obj.celCount())
-    obj.cel = 0;
+  if (obj.loop >= obj.loopCount()) obj.loop = 0;
+  if (obj.cel >= obj.celCount()) obj.cel = 0;
   obj.update();
-};
+}
 function cmd_set_view_v(i, vn) {
   var view = vars[vn];
   cmd_set_view(i, view);
-};
+}
 function cmd_set_loop(i, loop) {
   var obj = getObject(i);
   obj.loop = loop;
-  if (obj.loop >= obj.loopCount())
-    obj.loop = 0;
-  if (obj.cel >= obj.celCount())
-    obj.cel = 0;
+  if (obj.loop >= obj.loopCount()) obj.loop = 0;
+  if (obj.cel >= obj.celCount()) obj.cel = 0;
   obj.update();
-};
+}
 function cmd_set_loop_v(n, m) {
   var loop = vars[m];
   cmd_set_loop(n, loop);
-};
+}
 function cmd_fix_loop(n) {
   var obj = getObject(n);
   obj.FIX_LOOP = true;
@@ -245,12 +232,12 @@ function cmd_set_cel(i, cel) {
   var obj = getObject(i);
   obj.cel = cel;
   obj.update();
-};
+}
 function cmd_set_cel_v(i, vn) {
   var obj = getObject(i);
   obj.cel = vars[vn];
   obj.update();
-};
+}
 function cmd_last_cel(i, vn) {
   var obj = getObject(i);
   vars[vn] = obj.celCount() - 1;
@@ -287,11 +274,9 @@ function cmd_get_priority(i, vn) {
 function cmd_position(i, x, y) {
   var obj = getObject(i);
   // fixes room bounce
-  if (i == 0 && y < AGI.horizon)
-    y = AGI.horizon + 1;
+  if (i == 0 && y < AGI.horizon) y = AGI.horizon + 1;
   var objWidth = obj.width();
-  if (i == 0
-  &&  (x + objWidth) > AGI.screen_width) {
+  if (i == 0 && x + objWidth > AGI.screen_width) {
     x = x - objWidth;
   }
   obj.position(x, y);
@@ -304,16 +289,15 @@ function cmd_position(i, x, y) {
 }
 function cmd_position_v(i, vx, vy) {
   cmd_position(i, vars[vx], vars[vy]);
-};
+}
 function cmd_draw(i) {
   var obj = getObject(i);
-  if (obj.DRAWN)
-    return;
+  if (obj.DRAWN) return;
   obj.ANIMATED = true;
   obj.DRAWN = true;
   obj.UPDATE = true;
   obj.show();
-};
+}
 function cmd_erase(n) {
   var obj = getObject(n);
   obj.hide();
@@ -329,7 +313,7 @@ function cmd_get_posn(n, vx, vy) {
   var obj = getObject(n);
   vars[vx] = obj.x;
   vars[vy] = obj.y;
-};
+}
 function cmd_start_cycling(n) {
   var obj = getObject(n);
   obj.CYCLING = true;
@@ -357,7 +341,7 @@ function cmd_end_of_loop(i, flag) {
   //obj.flag_to_set = flag;
   obj.flag_to_set_loop = flag;
   obj.cycle_type = ct_end_of_loop;
-};
+}
 function cmd_reverse_loop(i, flag) {
   cmd_reset(flag);
   var obj = getObject(i);
@@ -367,12 +351,11 @@ function cmd_reverse_loop(i, flag) {
   //obj.flag_to_set = flag;
   obj.flag_to_set_loop = flag;
   obj.cycle_type = ct_reverse_loop;
-};
+}
 function cmd_cycle_time(n, m) {
   var obj = getObject(n);
   var value = vars[m];
-  if (value == 0)
-    value = 1;
+  if (value == 0) value = 1;
   obj.cycle_time = value;
   obj.cycle_time_count = value;
 }
@@ -391,33 +374,33 @@ function cmd_observe_horizon(n) {
   obj.observe_horizon = true;
 }
 function cmd_block(x1, y1, x2, y2) {
-  AGI.block = { "x1": x1, "y1": y1, "x2": x2, "y2": y2 };
-};
+  AGI.block = { x1: x1, y1: y1, x2: x2, y2: y2 };
+}
 function cmd_unblock() {
   AGI.block = false;
-};
+}
 function cmd_ignore_blocks(n) {
   var obj = getObject(n);
   obj.observe_blocks = false;
-};
+}
 function cmd_observe_blocks(n) {
   var obj = getObject(n);
   obj.observe_blocks = true;
-};
+}
 function cmd_ignore_objs(n) {
   var obj = getObject(n);
   obj.observe_objects = false;
-};
+}
 function cmd_observe_objs(n) {
   var obj = getObject(n);
   obj.observe_objects = true;
-};
+}
 function cmd_player_control() {
   AGI.control = c_player_control;
-};
+}
 function cmd_program_control() {
   AGI.control = c_program_control;
-};
+}
 function cmd_stop_motion(n) {
   var obj = getObject(n);
   obj.direction = 0;
@@ -426,7 +409,7 @@ function cmd_stop_motion(n) {
     vars[var_ego_dir] = 0;
     cmd_program_control();
   }
-};
+}
 function cmd_start_motion(n) {
   var obj = getObject(n);
   obj.motion = true;
@@ -434,18 +417,17 @@ function cmd_start_motion(n) {
     vars[var_ego_dir] = 0;
     cmd_player_control();
   }
-};
+}
 function cmd_step_size(n, m) {
   var obj = getObject(n);
   var s = vars[m];
-  if (s != 0)
-    obj.step_size = s;
-};
+  if (s != 0) obj.step_size = s;
+}
 function cmd_step_time(n, m) {
   var obj = getObject(n);
   obj.step_time = vars[m];
   obj.step_time_count = vars[m];
-};
+}
 function cmd_move_obj(n, x, y, step_size, flag) {
   var obj = getObject(n);
   //if (obj.didnt_move_count > 0) {
@@ -454,19 +436,17 @@ function cmd_move_obj(n, x, y, step_size, flag) {
   cmd_reset(flag);
   obj.UPDATE = true;
   obj.parm3 = obj.step_size;
-  if (step_size > 0)
-    obj.step_size = step_size;
+  if (step_size > 0) obj.step_size = step_size;
   obj.setDestination(x, y);
   obj.flag_to_set = flag;
-  if (n == 0)
-    cmd_program_control();
+  if (n == 0) cmd_program_control();
 }
 function cmd_move_obj_v(n, vx, vy, vstep, flag) {
   var x = vars[vx];
   var y = vars[vy];
   var step_size = vars[vstep];
   cmd_move_obj(n, x, y, step_size, flag);
-};
+}
 function cmd_follow_ego(n, s, flag) {
   cmd_reset(flag);
   var obj = getObject(n);
@@ -478,13 +458,12 @@ function cmd_follow_ego(n, s, flag) {
 function cmd_wander(n) {
   var obj = getObject(n);
   obj.motion_type = mt_wander;
-};
+}
 function cmd_normal_motion(n) {
   var obj = getObject(n);
-  if (obj.motion_type == mt_wander)
-    obj.stop();
+  if (obj.motion_type == mt_wander) obj.stop();
   obj.motion_type = mt_normal_motion;
-};
+}
 function cmd_set_dir(n, m) {
   var obj = getObject(n);
   obj.direction = vars[m];
@@ -516,38 +495,37 @@ function cmd_reposition(n, vx, vy) {
   obj.position(x, y);
   obj.UPDATE_POS = true;
   obj.fixPosition();
-};
+}
 function cmd_reposition_to(n, x, y) {
   var obj = getObject(n);
   obj.position(x, y);
   obj.UPDATE_POS = true;
   obj.fixPosition();
-};
+}
 function cmd_reposition_to_v(n, vx, vy) {
   var obj = getObject(n);
   obj.position(vars[vx], vars[vy]);
   obj.UPDATE_POS = true;
   obj.fixPosition();
-};
+}
 function cmd_stop_update(n) {
   var obj = getObject(n);
   obj.UPDATE = false;
-};
+}
 function cmd_start_update(n) {
   var obj = getObject(n);
   obj.UPDATE = true;
-};
+}
 function cmd_force_update(n) {
   var obj = getObject(n);
   obj.update();
-};
+}
 function cmd_distance(n, m, d) {
   var obj1 = objects[n];
   var obj2 = objects[m];
   if (obj1 && obj2 && obj1.DRAWN && obj2.DRAWN)
     vars[d] = Math.abs(obj1.x - obj2.x) + Math.abs(obj1.y - obj2.y);
-  else
-    vars[d] = 255;
+  else vars[d] = 255;
 }
 var cmd_add_to_picX1 = [];
 var cmd_add_to_picX2 = [];
@@ -558,19 +536,15 @@ function cmd_add_to_picReset() {
 //function cmd_add_to_pic(view, loop, cel, x, y, prio, margin) {
 function cmd_add_to_pic(view, loop, cel, x, y, prio, margin, append, xArray) {
   var obj;
-  if (append
-  &&  xArray
-  &&  cmd_add_to_picX1[x]
-  &&  cmd_add_to_picX2[x]) {
+  if (append && xArray && cmd_add_to_picX1[x] && cmd_add_to_picX2[x]) {
     cmd_add_to_picX1[x].cel = cel;
     cmd_add_to_picX1[x].position(x, y);
     cmd_add_to_picX1[x].update();
     if (cmd_add_to_picX2[x]) {
       cmd_add_to_picX2[x].rootElement.style.top = 0;
-      cmd_add_to_picX2[x].rootElement.style.height = AGI.zoom * (y + 1) + "px";
+      cmd_add_to_picX2[x].rootElement.style.height = AGI.zoom * (y + 1) + 'px';
     }
-  }
-  else {
+  } else {
     obj = new View();
     obj.FIXED_PRIORITY = true;
     obj.load(view);
@@ -586,39 +560,51 @@ function cmd_add_to_pic(view, loop, cel, x, y, prio, margin, append, xArray) {
   // always place static objects at the beginning of the canvas. Fixes sq1 barman z-index issue with same prio as static objects
   //var parent = obj.rootElement.parentNode;
   if (append) {
-    if (xArray
-    &&  cmd_add_to_picX1[x]
-    &&  cmd_add_to_picX2[x]) {
-    }
-    else {
+    if (xArray && cmd_add_to_picX1[x] && cmd_add_to_picX2[x]) {
+    } else {
       if (xArray) {
         if (cmd_add_to_picX1[x]) {
-          obj.rootElement.style.backgroundColor = "#8A0000";
+          obj.rootElement.style.backgroundColor = '#8A0000';
           obj.imageElement.parentNode.removeChild(obj.imageElement);
           cmd_add_to_picX2[x] = obj;
-        }
-        else {
+        } else {
           cmd_add_to_picX1[x] = obj;
         }
       }
       var parent = obj.rootElement.parentNode;
       parent.appendChild(obj.rootElement);
     }
-  }
-  else {
+  } else {
     var parent = obj.rootElement.parentNode;
     parent.insertBefore(obj.rootElement, parent.firstChild);
   }
-};
+}
 //function cmd_add_to_pic_v(view, loop, cel, x, y, prio) {
 function cmd_add_to_pic_v(view, loop, cel, x, y, prio, margin, append, xArray) {
   if (append) {
-    cmd_add_to_pic(vars[view], vars[loop], vars[cel], vars[x], vars[y], vars[prio], margin, append, xArray);
+    cmd_add_to_pic(
+      vars[view],
+      vars[loop],
+      vars[cel],
+      vars[x],
+      vars[y],
+      vars[prio],
+      margin,
+      append,
+      xArray
+    );
+  } else {
+    cmd_add_to_pic(
+      vars[view],
+      vars[loop],
+      vars[cel],
+      vars[x],
+      vars[y],
+      vars[prio],
+      margin
+    );
   }
-  else {
-    cmd_add_to_pic(vars[view], vars[loop], vars[cel], vars[x], vars[y], vars[prio], margin);
-  }
-};
+}
 //function cmd_call(i) {
 function cmd_call(i, switches, reCall) {
   // if a new room is loaded, do not execute any deeper logics (they could act upon the new_room flag -> pq1 newspaper bug)
@@ -634,28 +620,24 @@ function cmd_call(i, switches, reCall) {
   AGI.current_logic = i;
   jumpTo(0);
   if (reCall) {
-  }
-  else {
+  } else {
     AGI.cmdCallStack.push(i);
   }
-  if (switches
-  &&  Array.isArray(switches)) {
+  if (switches && Array.isArray(switches)) {
     AGI.cmdCallStackSwitches.pop();
     AGI.cmdCallStackSwitches.push(switches);
   }
   if (reCall) {
-  }
-  else {
+  } else {
     AGI.cmdCallStackSwitches.push([0]);
   }
-  window["logic" + i]();
+  window['logic' + i]();
   if (waiting == false) {
     AGI.cmdCallStack.pop();
     AGI.cmdCallStackSwitches.pop();
   }
   if (AGI.screen === s_text_screen) {
-  }
-  else {
+  } else {
     AGI.current_logic = prevLogic;
   }
 }
@@ -668,15 +650,14 @@ function cmd_call_v(vn, switches) {
   cmd_call(vars[vn]);
 }
 function cmd_clear_lines(y1, y2, color) {
-  for (var y = y1; y <= y2; y++)
-    Text.clearLine(y);
-};
+  for (var y = y1; y <= y2; y++) Text.clearLine(y);
+}
 function cmd_draw_pic(vn) {
   AGI.picture.load(vars[vn]);
-};
+}
 function cmd_new_room_v(v) {
   cmd_new_room(vars[v]);
-};
+}
 // checks for F key press
 function cmd_controller(cn) {
   if (IO.controllerKey == cn) {
@@ -684,78 +665,70 @@ function cmd_controller(cn) {
     return true;
   }
   return false;
-};
+}
 function cmd_said() {
-  if (flags[flag_input_parsed]
-  ||  !flags[flag_input_received]) {
+  if (flags[flag_input_parsed] || !flags[flag_input_received]) {
     return;
   }
   return IO.hasSaid(arguments);
-};
+}
 function cmd_show_pic() {
   AGI.picture.show();
-};
+}
 // play a sound and set flag at end
 function cmd_sound(n, flag) {
   // do not play sound but set flag directly
   Sound.play(n, flag);
-};
+}
 // check if the left pixel of the bottom row is within the box
 function cmd_posn(n, x1, y1, x2, y2) {
   var obj = getObject(n);
   var x = obj.x;
   var y = obj.y;
-  return (x >= x1 && x <= x2 && y >= y1 && y <= y2);
+  return x >= x1 && x <= x2 && y >= y1 && y <= y2;
 }
 // check if entire bottom-row of pixels is inside the box
 function cmd_obj_in_box(n, x1, y1, x2, y2) {
   var obj = getObject(n);
   var x = obj.x;
   var y = obj.y;
-  return (x >= x1 && x + obj.width() <= x2 && y >= y1 && y <= y2);
+  return x >= x1 && x + obj.width() <= x2 && y >= y1 && y <= y2;
 }
 // checks if the right pixel of the bottom row is inside the box
 function cmd_right_posn(n, x1, y1, x2, y2) {
   var obj = getObject(n);
   var x = obj.x + obj.width();
   var y = obj.y;
-  return (x >= x1 && x <= x2 && y >= y1 && y <= y2);
+  return x >= x1 && x <= x2 && y >= y1 && y <= y2;
 }
 // checks if the center pixel of the bottom row is inside the box
 function cmd_center_posn(n, x1, y1, x2, y2) {
   var obj = getObject(n);
   var x = obj.x + Math.round(obj.width() / 2);
   var y = obj.y;
-  return (x >= x1 && x <= x2 && y >= y1 && y <= y2);
+  return x >= x1 && x <= x2 && y >= y1 && y <= y2;
 }
 // gets object by int or name [n]
 function cmd_get(n) {
-  if (isNaN(n))
-    n = Utils.inventoryNameToIndex(n);
-  if (n >= 0)
-    items[n] = true;
+  if (isNaN(n)) n = Utils.inventoryNameToIndex(n);
+  if (n >= 0) items[n] = true;
 }
 // returns true if ego has inventory object n
 function cmd_has(n) {
   // check of the object was referenced by name ("Cartridge") instead of index (1)
-  if (isNaN(n))
-    n = Utils.inventoryNameToIndex(n);
-  return (n >= 0 && items[n])? true : false;
+  if (isNaN(n)) n = Utils.inventoryNameToIndex(n);
+  return n >= 0 && items[n] ? true : false;
 }
 // drops an item by removing it from the inventory list
 function cmd_drop(n) {
   // check of the object was referenced by name ("Cartridge") instead of index (1)
-  if (isNaN(n))
-    n = Utils.inventoryNameToIndex(n);
-  if (!isNaN(n))
-    delete items[n];
+  if (isNaN(n)) n = Utils.inventoryNameToIndex(n);
+  if (!isNaN(n)) delete items[n];
 }
 // only replaces cmd_drop and cmd_has, does not implement other values of m for now
 function cmd_put(n, m) {
-  if (m == 0)
-    cmd_drop(n);
-  if (m == 255)
-    cmd_get(n);
+  if (m == 0) cmd_drop(n);
+  if (m == 255) cmd_get(n);
 }
 // only replaces cmd_drop and cmd_has, does not implement other values of m for now
 function cmd_put_v(n, m) {
@@ -781,8 +754,8 @@ function cmd_load_logics_v(vn) {
   cmd_load_logics(vars[vn]);
 }
 function cmd_load_logics(i) {
-  if (!window["logic" + i]) {
-    var url = Sarien.path + "/logic" + i + ".js";
+  if (!window['logic' + i]) {
+    var url = Sarien.path + '/logic' + i + '.js';
     Sarien.loadResource(url);
   }
   if (cmd_isset(flag_new_room) && AGI.current_room > 0)
@@ -796,7 +769,7 @@ function cmd_graphics() {
     IO.key_pressed = false;
   }
   AGI.screen = s_graphics_screen;
-  document.getElementById("canvas").className = "";
+  document.getElementById('canvas').className = '';
   if (!Text.messageShown) {
     Text.clear();
     if (IO.commandLineIsVisible) {
@@ -810,7 +783,7 @@ function cmd_text_screen() {
   }
   AGI.screen = s_text_screen;
   Text.hideMessage();
-  document.getElementById("canvas").className = "text-screen";
+  document.getElementById('canvas').className = 'text-screen';
 }
 function cmd_display(row, col, msg) {
   msg = Text.parseMessage(msg);
@@ -838,8 +811,7 @@ function cmd_print_at_v(n) {
 function cmd_print_v(n) {
   var i = vars[n];
   var msgs = MESSAGES[AGI.current_room];
-  if (msgs)
-  {
+  if (msgs) {
     var msg = MESSAGES[AGI.current_room][i];
     cmd_print(msg);
   }
@@ -850,9 +822,6 @@ function cmd_get_string(n, msg, x, y, len) {
 function cmd_get_num(msg, n) {
   vars[n] = Text.getInput(msg);
 }
-function cmd_set_string(sn, msg) {
-  strings[sn] = msg;
-}
 function cmd_parse(s1) {
   IO.parseCommandLine(strings[s1]);
 }
@@ -860,8 +829,7 @@ function cmd_set_game_id(id) {
   AGI.game_id = id;
 }
 function cmd_set_key(keyCode, scanCode, controller) {
-  if (keyCode == 0)
-    IO.keyMap[scanCode] = controller;
+  if (keyCode == 0) IO.keyMap[scanCode] = controller;
 }
 function cmd_compare_strings(s1, s2) {
   return strings[s1] == strings[s2];
@@ -869,9 +837,8 @@ function cmd_compare_strings(s1, s2) {
 // returns true if obj n is in room m.
 // implementation always returns true except when the object was retrieved
 function cmd_obj_in_room(n, m) {
-  if (isNaN(n))
-    n = Utils.inventoryNameToIndex(n);
-  return (n >= 0)? !items[n] : false;
+  if (isNaN(n)) n = Utils.inventoryNameToIndex(n);
+  return n >= 0 ? !items[n] : false;
 }
 function cmd_set_text_attribute(fg, bg) {
   Text.foregroundColor = fg;
@@ -879,17 +846,15 @@ function cmd_set_text_attribute(fg, bg) {
 }
 function cmd_clear_text_rect(y1, x1, y2, x2, c) {
   for (var y = y1; y <= y2; y++)
-    for (var x = x1; x <= x2; x++)
-    Text.clearPos(x, y);
+    for (var x = x1; x <= x2; x++) Text.clearPos(x, y);
 }
 // if an avatar-view is encountered, add it to the "choose avatar" list
 function cmd_load_view(n) {
-  if (avatarNames[n])
-    IO.avatars[n] = 1;
-};
+  if (avatarNames[n]) IO.avatars[n] = 1;
+}
 function cmd_load_view_v(n) {
   cmd_load_view(vars[n]);
-};
+}
 function cmd_show_obj(n) {
   Text.showInventoryItem(n);
 }
@@ -897,10 +862,10 @@ function cmd_show_obj_v(n) {
   Text.showInventoryItem(vars[n]);
 }
 function cmd_status_line_on() {
-  document.getElementById("menu").style.display = "block";
+  document.getElementById('menu').style.display = 'block';
 }
 function cmd_status_line_off() {
-  document.getElementById("menu").style.display = "none";
+  document.getElementById('menu').style.display = 'none';
 }
 // quit takes you to the homepage
 function cmd_quit() {
@@ -920,7 +885,7 @@ function cmd_echo_line() {
   if (IO.commandLineIsVisible) {
     IO.showCommandLine();
   }*/
-  var input = window.prompt("Enter input",IO.lastInput);
+  var input = window.prompt('Enter input', IO.lastInput);
   if (input && Utils.Trim(input).length != 0) {
     IO.parseCommandLine(input);
   }
@@ -931,79 +896,51 @@ function cmd_get_room_v(n, m) {
   vars[m] = cmd_has(vars[n]) ? 255 : vars[var_room_no];
 }
 // unimplemented commands
-function cmd_set_cursor_char() {
-}
-function cmd_discard_pic() {
-}
-function cmd_discard_view() {
-}
-function cmd_discard_view_v() {
-}
+function cmd_set_cursor_char() {}
+function cmd_discard_pic() {}
+function cmd_discard_view() {}
+function cmd_discard_view_v() {}
 function cmd_shake_screen(a) {
   i = 0;
-  var canvas = document.getElementById("canvas");
+  var canvas = document.getElementById('canvas');
   for (var i = 0; i < a; i++) {
-    setTimeout(function() {
-      canvas.style.marginLeft = "-10px";
-      canvas.style.marginTop = "-10px";
-      setTimeout(function() {
-        canvas.style.marginLeft = "0px";
-        canvas.style.marginTop = "0px";
-        setTimeout(function() {
-          canvas.style.marginLeft = "-10px";
-          canvas.style.marginTop = "-10px";
-          setTimeout(function() {
-            canvas.style.marginLeft = "0px";
-            canvas.style.marginTop = "0px";
+    setTimeout(function () {
+      canvas.style.marginLeft = '-10px';
+      canvas.style.marginTop = '-10px';
+      setTimeout(function () {
+        canvas.style.marginLeft = '0px';
+        canvas.style.marginTop = '0px';
+        setTimeout(function () {
+          canvas.style.marginLeft = '-10px';
+          canvas.style.marginTop = '-10px';
+          setTimeout(function () {
+            canvas.style.marginLeft = '0px';
+            canvas.style.marginTop = '0px';
           }, 50);
         }, 50);
       }, 50);
     }, i * 200);
   }
 }
-function cmd_script_size() {
-}
-function cmd_stop_sound() {
-}
-function cmd_close_window() {
-}
-function cmd_set_scan_start() {
-}
-function cmd_trace_info() {
-}
-function cmd_configure_screen() {
-}
-function cmd_cancel_line() {
-}
-function cmd_enable_item() {
-}
-function cmd_disable_item() {
-}
-function cmd_status() {
-}
-function cmd_object_touched_prio(i, prio) {
-}
-function cmd_load_pic() {
-};
-function cmd_load_sound() {
-};
-function cmd_set_menu(menu) {
-}
-function cmd_set_menu_item(menu_item, c) {
-}
-function cmd_submit_menu() {
-}
-function cmd_disable_item(c) {
-}
-function cmd_open_dialogue() {
-}
-function cmd_close_dialogue() {
-}
-function cmd_reset_scan_start() {
-}
-function cmd_menu_input() {
-}
-function version() {
-}
-function overlay_pic() {
-}
+function cmd_script_size() {}
+function cmd_stop_sound() {}
+function cmd_close_window() {}
+function cmd_set_scan_start() {}
+function cmd_trace_info() {}
+function cmd_configure_screen() {}
+function cmd_cancel_line() {}
+function cmd_enable_item() {}
+function cmd_status() {}
+function cmd_object_touched_prio(i, prio) {}
+function cmd_load_pic() {}
+function cmd_load_sound() {}
+function cmd_set_menu(menu) {}
+function cmd_set_menu_item(menu_item, c) {}
+function cmd_submit_menu() {}
+function cmd_disable_item(c) {}
+function cmd_open_dialogue() {}
+function cmd_close_dialogue() {}
+function cmd_reset_scan_start() {}
+function cmd_menu_input() {}
+function version() {}
+function overlay_pic() {}

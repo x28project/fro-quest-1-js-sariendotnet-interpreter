@@ -1,6 +1,6 @@
 {
   "name": "fro-quest-1-js-sariendotnet-interpreter",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Fro Quest (FQ1) Sarien.net (sariendotnet) interpreter",
   "keywords": [
     "Fro",
@@ -18,6 +18,16 @@
     "Sarien"
   ],
   "private": true,
+  "scripts": {
+    "lint": "eslint ."
+  },
   "author": "X28 Project <x28project@gmail.com> (http://www.x28project.com)",
-  "license": "LGPL-3.0-or-later"
+  "license": "LGPL-3.0-or-later",
+  "devDependencies": {
+    "eslint": "^7.29.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^3.4.0",
+    "prettier": "^2.3.2"
+  }
 }
