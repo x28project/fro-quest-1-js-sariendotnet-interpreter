@@ -30,7 +30,7 @@ var Sarien =
     Sarien.initViewCss();
     Sarien.initPictureCss();
     Sarien.initHTML();
-    MultiplayerClient.enabled = multiplayerEnabled;
+    //MultiplayerClient.enabled = multiplayerEnabled;
     AGI.init();
   },
   // write the canvas, dialog and other elements
@@ -46,8 +46,13 @@ var Sarien =
         var cels = loops[l];
         for (var c = 0; c < cels.length; c++) {
           var cel = cels[c];
-          cssText.push(".V", view, (l - 1), c, " { width:", cel[0], "px; height:", cel[1], "px; margin-top:", cel[2], "px; }");
-          cssText.push(".V", view, (l - 1), c, " img { left:", cel[3], "px; top:", cel[4], "px; }");
+          if (cel.length === 6) {
+            cssText.push(".V", view, (l - 1), "_", c, " { width:", cel[0], "px; height:", cel[1], "px; margin-top:", cel[2], "px; font-size:1px; }");
+          }
+          else {
+            cssText.push(".V", view, (l - 1), "_", c, " { width:", cel[0], "px; height:", cel[1], "px; margin-top:", cel[2], "px; }");
+          }
+          cssText.push(".V", view, (l - 1), "_", c, " img { left:", cel[3], "px; top:", cel[4], "px; }");
         }
       }
     }
@@ -80,10 +85,18 @@ var Sarien =
   checkForHashChange: function(room) {
     if (!room)
       room = document.location.hash;
+
+    room = decodeURIComponent(room);
+
     if (room.length > 1) {
       room = room.substr(1);
-      if (isNaN(room) && !roomNames[room])
+      if (isNaN(room) && !roomNames[room]) {
         room = State.loadFromUrl(room);
+        AGI.current_room = -1;
+      }
+      else {
+        return false;
+      }
       if (isNaN(room) && roomNames[room])
         room = roomNames[room];
       if (room != AGI.current_room) {
@@ -125,8 +138,19 @@ var Sarien =
   // loads a (js) source asynchronously
   loadResource: function(url) {
     var xhr = Agent.createXmlHttpObject();
+    xhr.overrideMimeType("text/plain");
     xhr.open("GET", url, false);
+
+    //xhr.open("GET", url, true);
+    /*xhr.onreadystatechange = function () {
+      if (xhr.readyState != 4) return;
+      Sarien.loadResourceDone(xhr);
+    }*/
+
     xhr.send(null);
+
+    //return;
+
     var js = xhr.responseText;
     try {
       eval(js);
@@ -134,5 +158,14 @@ var Sarien =
       js = "";
     }
     return js;
-  }
+  }/*,
+  loadResourceDone: function(xhr) {
+    var js = xhr.responseText;
+    try {
+      eval(js);
+    } catch (e) {
+      js = "";
+    }
+    return js;
+  }*/
 };

@@ -21,7 +21,7 @@ var Hacks =
 {
   init: function(game) {
     IO.addPrettyVerbs({
-      "acquire": "take",
+      "acquire": "get",
       "add": "give",
       "administer": "give",
       "aid": "help",
@@ -75,7 +75,8 @@ var Hacks =
       "i'm": "go to",
       "i_d.": "id",
       "increase": "open",
-      "inv": "inventory",
+      //"inv": "inventory",
+      "inv": null,
       "jack off": "xxx",
       "key board": "keyboard",
       "let": "jump",
@@ -87,8 +88,57 @@ var Hacks =
       "shsr": "SHSR",
       "sp": "object",
       "tp": "teleport",
-      "y": "yes"
+      "y": "yes",
+      
+      "air": "cloud",
+      "air element": [[8], [124], "Air Elemental"],
+      "art": "picture",
+      "barricade": "wall",
+      "bar or vortex": "pole or vortex",
+      "blaze": "fire",
+      "blaze element": [[4], [124], "Fire Elemental"],
+      "brush": "pick",
+      "bunny": "rabbit",
+      "cup drink": "cup",
+      "dirt element": [[5], [124], "Earth Elemental"],
+      "drink element": [[7], [124], "Water Elemental"],
+      "dude": "man",
+      "footpath": "path",
+      "headrest": "pillow",
+      "heart element": [[15], [124], "Heart Elemental"],
+      "new word 1": "snow",
+      "oasis drink": "oasis",
+      "pizza": null,
+      "pizza element": [[9], [124], "Pizza Elemental"],
+      "pebble": "rock",
+      "plaque": "sign",
+      "reptile": "tortoise",
+      
+      "clock": null,
+      "combine element": null,
+      "fast speed": null,
+      "faster speed": null,
+      "fastest speed": null,
+      "help": null,
+      "hint": null,
+      "inventory": null,
+      "look at inventory": null,
+      "normal speed": null,
+      "pause game": null,
+      "quit game": null,
+      "restart game": null,
+      "restore game": null,
+      "save game": null,
+      "slow speed": null,
+      "slower speed": null,
+      "slowest speed": null,
     });
+    
+    IO.inventoryCommands = {
+      "kill self": "Emergency Suicide Kit",
+      "wear eyeglasses": "Eyeglasses",
+      "combine elementals": ["Air Elemental", "Earth Elemental", "Fire Elemental", "Heart Elemental", "Water Elemental"],
+    };
 
     switch (game) {
       case "SQ":
@@ -130,6 +180,15 @@ var Hacks =
         Sound.setDuration(21, 10000);
         window.cmd_status = function() {
           Text.displayMessage("To use an object, press \"/\" or rightclick, and choose the inventory object from the \"use\" submenu.");
+        }
+        break;
+      case "KQ3":
+        // logic0 initializes ego at position 0,0 when going directly to a room by url
+        window.cmd_position_v = function(i, vx, vy) {
+          var x = vars[vx];
+          var y = vars[vy];
+          if (x || y)
+            cmd_position(i, x, y);
         }
         break;
       case "KQ3":
@@ -217,6 +276,9 @@ var Hacks =
   // do not hash the intro
   updateAddressBarAllowed: function(id, roomNr) {
     switch (id) {
+      case "FQ1":
+        if (roomNr == 1) return false;
+        break;
       case "SQ":
         if (roomNr == 67) return false;
         break;
@@ -240,5 +302,6 @@ var Hacks =
         break;
     }
     return true;
+    //return false;
   }
 };

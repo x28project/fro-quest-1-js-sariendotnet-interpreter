@@ -67,7 +67,8 @@ var State =
     var prevTitle = document.title;
     
     // set savegame title, for easy reference by bookmark titles
-    document.title = "Sarien.net Savegame: " + AGI.game_id + " " + Sarien.getRoomName(AGI.current_room) + " score:" + Menu.score;
+    //document.title = "Sarien.net Savegame: " + AGI.game_id + " " + Sarien.getRoomName(AGI.current_room) + " score:" + Menu.score;
+    document.title = "Fro Quest: \"" + Sarien.getRoomName(AGI.current_room) + "\", Score: " + Menu.score;
     document.location.hash = stateInfo;
     
     // show the savegame message
@@ -103,7 +104,7 @@ var State =
   },
   
   restore: function() {
-    Text.displayMessage("RESTORE GAME\n\nEach savegame in Sarien.net is a browser bookmark to the url that is generated when saving.\n\nTo restore, simply load a bookmark that you have created earlier.");
+    Text.displayMessage("RESTORE GAME\n\nEach saved game in Fro Quest is a browser bookmark to the url that is generated when saving.\n\nTo restore, simply load a bookmark that you have created earlier.");
   },
   
   // loads the state that is set statically in State.stateToLoad

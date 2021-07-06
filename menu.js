@@ -47,10 +47,13 @@ var Menu =
 
   // per cycle, check if the menu should be visible or not, and if score has changed
   cycle: function() {
-    if (cmd_isset(flag_menu_enabled) && !Menu.enabled)
+    if (IO.actions.style.display === "block") {
+      Menu.show();
+    }
+    /*else if (cmd_isset(flag_menu_enabled) && !Menu.enabled)
       Menu.show();
     else if (!cmd_isset(flag_menu_enabled) && Menu.enabled)
-      Menu.hide();
+      Menu.hide();*/
 
     var curScore = vars[var_score] * 1;
     if (isNaN(curScore))
@@ -64,14 +67,14 @@ var Menu =
   // write the score on the menu bar
   refresh: function() {
     var text = " Score:" + Menu.score + " of " + vars[var_max_score];
-    if (MultiplayerClient.enabled) {
-      for (var i = text.length; i < 23; i++)
-        text += " ";
-      text += " Players:" + (MultiplayerClient.playerCount() + 1);
-    }
-    for (var i = text.length; i < 47; i++)
+    //if (MultiplayerClient.enabled) {
+    //  for (var i = text.length; i < 23; i++)
+    //    text += " ";
+    //  text += " Players:" + (MultiplayerClient.playerCount() + 1);
+    //}
+    for (var i = text.length; i < 48; i++)
       text += " ";
-    text += "Esc = help";
+    text += "Fro Quest";
     Menu.text = text;
     Menu.updateText(text);
   },
@@ -84,12 +87,22 @@ var Menu =
 
   // on hover, click for help
   onMouseOver: function() {
-    Menu.updateText(" Click for help");
+    if (IO.actions.style.display === "block") {
+      ;
+    }
+    else {
+      Menu.updateText(" FQ1 Menu");
+    }
   },
 
   // on mouse out, place help text back
   onMouseOut: function() {
-    Menu.updateText(Menu.text);
+    if (IO.actions.style.display === "block") {
+      ;
+    }
+    else {
+      Menu.updateText(Menu.text);
+    }
   },
 
   // clicking on the bar shows the help
@@ -102,7 +115,8 @@ var Menu =
 
   // show the help message
   showHelp: function() {
-    var msg = "Click or use the cursors to move. Do not hold cursors. Doubleclick to reposition, in case you are stuck.\n\nRightclick or \"/\" brings up the actions menu. Use mouse or cursors to navigate through these actions.\n\nProbable actions are listed directly. Other actions are available through the \"more\" submenu.";
-    Text.displayMessage(msg);
+    //var msg = "Click or use the cursors to move. Do not hold cursors. Doubleclick to reposition, in case you are stuck.\n\nRightclick or \"/\" brings up the actions menu. Use mouse or cursors to navigate through these actions.\n\nProbable actions are listed directly. Other actions are available through the \"more\" submenu.";
+    //Text.displayMessage(msg);
+    IO.executeAction(a_local_verbs);
   }
 };

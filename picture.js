@@ -22,6 +22,7 @@ function Picture()
 Picture.prototype =
 {
   id: -1,
+  idPrev: -1,
   staticObjects: [],
 
   // Upon initialization, first remove any existing room elements,
@@ -41,11 +42,27 @@ Picture.prototype =
         }
       }
     }
-
+    
+    idPrev = this.id;
     this.id = id;
   },
   // show a give picture
   show: function(id) {
+    /*this.removeStaticObjects();
+
+    // remove existing priority layers and static objects
+    if (idPrev > 0) {
+      var priorities = PICTURES[idPrev];
+      if (priorities) {
+        for (var nr in priorities) {
+          var elementId = "priority" + nr;
+          var el = document.getElementById(elementId);
+          if (el)
+            el.parentNode.removeChild(el);
+        }
+      }
+    }*/
+    
     // clear var here?
     cmd_reset(flag_ego_touching_signal_line);
 
@@ -60,7 +77,8 @@ Picture.prototype =
         el.setAttribute("id", id);
         el.setAttribute("src", Sarien.path + "/picture" + Utils.PadLeft(this.id, '0', 3) + "-" + Utils.PadLeft(nr, '0', 2) + ".png");
         el.className = className;
-        document.getElementById("canvas").appendChild(el);
+        //document.getElementById("canvas").appendChild(el);
+        document.getElementById("canvas").insertBefore(el, document.getElementById("canvas").firstChild);
       }
     }
     Canvas.load(this.id);

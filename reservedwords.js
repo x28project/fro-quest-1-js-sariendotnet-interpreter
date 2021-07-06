@@ -126,4 +126,7 @@ var a_locations = "a_locations";
 var a_separator = "a_separator";
 var a_avatars = "a_avatars";
 var a_options = "a_options";
+var a_inventory = "a_inventory";
+var a_retype = "a_retype";
+var a_soundOnOff = "a_soundOnOff";
 var a_disable_multiplayer = "a_disable_multiplayer";

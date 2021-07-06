@@ -40,6 +40,7 @@ var IO =
   commands: {}, // actions hashmap, stored per verb such as "check out" or "acquire"
   currentRoomLogics: {},
   prettyVerbs: {},
+  inventoryCommands: {},
   speeds: [0, 30, 42, 100],
   avatars: {}, // avatars that I have found
   lastInput: "",
@@ -54,7 +55,8 @@ var IO =
     IO.backAction = a_exit,
     IO.screen = document.getElementById("sarien");
     IO.canvas = document.getElementById("canvas");
-    IO.actions = document.createElement(Agent.iPhone ? "div" : "select");
+    //IO.actions = document.createElement(Agent.iPhone ? "div" : "select");
+    IO.actions = document.createElement("div");
     IO.actions.id = "actions";
     IO.canvas.appendChild(IO.actions);
 
@@ -94,6 +96,61 @@ var IO =
   },
 
   onKeyDown: function(evt) {
+    if (IO.accept_input === false
+    &&  !(evt.keyCode == 13 || evt.keyCode == 32 || evt.keyCode == 27 || evt.keyCode == 116 || evt.keyCode == 118)
+    &&  !(evt.ctrlKey &&  evt.shiftKey && evt.keyCode == 82)) {
+      evt.preventDefault();
+      return;
+    }
+    if (evt.ctrlKey
+    &&  evt.keyCode === 69) {
+      cmd_echo_line();
+      evt.preventDefault();
+      return;
+    }
+    if (evt.keyCode === 112) {
+      IO.parseCommandLine("Help");
+      evt.preventDefault();
+      return;
+    }
+    if (evt.keyCode === 116) {
+      IO.parseCommandLine("Save");
+      evt.preventDefault();
+      return;
+    }
+    if (evt.keyCode === 118) {
+      IO.parseCommandLine("Restore");
+      evt.preventDefault();
+      return;
+    }
+    if (evt.altKey
+    &&  evt.keyCode === 72) {
+      IO.parseCommandLine("Hint");
+      evt.preventDefault();
+      return;
+    }
+    if (Text.nextMessageTimeout) {
+      clearTimeout(Text.nextMessageTimeout);
+      Text.nextMessageTimeout = null;
+    }
+    if (waiting) {
+      if (AGI.paused && Text.messageShown
+      &&  !(evt.keyCode == 13 || evt.keyCode == 32 || evt.keyCode == 27)) {
+        return;
+      }
+      IO.cancelNextKeyClick = true;
+      if (!Text.messageShown) {
+        IO.key_pressed = true;
+      }
+      jumpTo.count = 0;
+      jumptoLine = waitLineNr;
+      jumpTo.lastLogic = AGI.current_logic;
+      waiting = false;
+      if (AGI.screen == s_text_screen) {
+        return;
+      }
+    }
+    
     if (Agent.OP)
       IO.cancelNextKeyClick = true;
 
@@ -116,6 +173,7 @@ var IO =
       if (key == 13 || key == 32 || key == 27) {
         IO.cancelNextKeyPress = true;
         cmd_reset(flag_input_received);
+        cmd_assignn(var_unknown_word_no, 0);
         cmd_set(flag_input_parsed);
         AGI.unpause();
       }
@@ -256,21 +314,62 @@ var IO =
     IO.commandLineIsVisible = false;
   },
   onClick: function(evt, dbl) {
+    if (Sound.playClick
+    &&  Sound.playClickDone == false) {
+      Sound.loadAll();
+      cmd_sound(Sound.playClickN, Sound.playClickFlag);
+      Sound.playClick = false;
+      Sound.playClickDone = true;
+    }
+    if (AGI.waitingReturnQueueBusy) {
+      Agent.cancelEvent(evt);
+      return;
+    }
+    if (Text.nextMessageTimeout) {
+      clearTimeout(Text.nextMessageTimeout);
+      Text.nextMessageTimeout = null;
+    }
+    if (waiting) {
+      if (!Text.messageShown) {
+        IO.key_pressed = true;
+      }
+      jumpTo.count = 0;
+      jumptoLine = waitLineNr;
+      jumpTo.lastLogic = AGI.current_logic;
+      waiting = false;
+      IO.cancelNextKeyClick = false;
+      if (AGI.screen == s_text_screen) {
+        return;
+      }
+    }
     var evt = Agent.IE ? event : evt;
     if (IO.cancelNextKeyClick) {
       IO.cancelNextKeyClick = false;
       return;
     }
-
+    
     if (AGI.paused) {
-      if (Text.messageShown)
-        Text.hideMessage();
+      //if (Text.messageShown)
+      //  Text.hideMessage();
       if (IO.actionsVisible())
         IO.hideActions();
       cmd_reset(flag_input_received);
+      cmd_assignn(var_unknown_word_no, 0);
       cmd_set(flag_input_parsed);
-      Agent.cancelEvent(evt);
+      if (evt) {
+        Agent.cancelEvent(evt);
+      }
       return AGI.unpause();
+    }
+    if (IO.commandLineIsVisible) {
+      var prompt = (((24 - 1) * 8 * AGI.zoom) - AGI.zoom + 2) - evt.clientY;
+      if (prompt <= 0) {
+        var input = window.prompt("Enter input","");
+        if (input && Utils.Trim(input).length != 0) {
+          IO.parseCommandLine(input);
+        }
+        return;
+      }
     }
     IO.usingKeyboard = false;
     IO.hideActions();
@@ -287,12 +386,12 @@ var IO =
     var ego = getEgo();
     if (ego && AGI.control == c_player_control) {
       x -= Math.round(ego.width() / 2);
-      if (dbl)
-        ego.position(x, y);
-      else {
+      //if (dbl)
+      //  ego.position(x, y);
+      //else {
         // mouse play for clicking on the left edge
         ego.setDestination(x, y);
-      }
+      //}
     }
   },
   onRightClick: function(evt) {
@@ -310,6 +409,10 @@ var IO =
     IO.executeAction(a_local_verbs);
   },
   onDoubleClick: function(evt) {
+    if (waiting) {
+      IO.onClick(evt, false);
+      return;
+    }
     IO.onClick(evt, true);
   },
   // clears the actions menu from all current option elements
@@ -321,6 +424,9 @@ var IO =
     AGI.pause();
     var size = Math.min(IO.actions.childNodes.length, 15);
     IO.actions.setAttribute("size", size);
+    
+    Menu.onMouseOver();
+    
     IO.actions.style.display = "block";
 
     var x = IO.x;
@@ -353,6 +459,8 @@ var IO =
     AGI.unpause();
     IO.actions.style.display = "none";
     IO.parseRoomCommands(IO.commandsLocal);
+    
+    Menu.refresh();
   },
   // true if the actions pane is currently visible
   actionsVisible: function() {
@@ -372,7 +480,7 @@ var IO =
     IO.lastInput = cmd;
     // immediately dispatch the said commands
     cmd = Utils.Trim(cmd);
-    MultiplayerClient.say(cmd, true);
+    //MultiplayerClient.say(cmd, true);
 
     var oriCommand = cmd;
     cmd = Hacks.parse(AGI.game_id, cmd);
@@ -397,15 +505,25 @@ var IO =
         for (var i = 0; i < j; i++) {
           token = Utils.Trim(token + " " + parts[i]);
         }
+        
+        var tokenFound = false;
         for (var testToken in TOKENS) {
-          if (Utils.ArrayHasItem(TOKENS[testToken], token) && token.length > longestToken.length)
+          if (Utils.ArrayHasItem(TOKENS[testToken], token) && token.length > longestToken.length) {
             longestToken = token;
+            tokenFound = true;
+          }
+        }
+        if (tokenFound === false
+        &&  token.length > 0
+        &&  token.indexOf(" ") === -1) {
+          longestToken = token;
+          break;
         }
       }
-
+      
       // if no longest token was found, leave
       if (longestToken == "") {
-        return;
+        ;//return;
       }
 
       // remove the longest token from the command
@@ -416,13 +534,23 @@ var IO =
     var commandTokens = [];
     for (var i = 0; i < tokens.length; i++) {
       var token = tokens[i];
+      var tokenFound = false;
       for (var testToken in TOKENS) {
-        if (testToken != "0" && Utils.ArrayHasItem(TOKENS[testToken], token))
-          commandTokens.push(TOKENS[testToken][0]);
+        if (/*testToken != "0" &&*/ Utils.ArrayHasItem(TOKENS[testToken], token)) {
+          if (testToken != "0") {
+            commandTokens.push(TOKENS[testToken][0]);
+          }
+          tokenFound = true;
+        }
+      }
+      if (tokenFound === false) {
+        commandTokens.push(token);
+        cmd_assignn(var_unknown_word_no, IO.lastInput.split(" ").indexOf(token) + 1);
       }
     }
     // now that the system commands are known, run the input through the system parser
-    IO.lastTokens = commandTokens;
+    //IO.lastTokens = commandTokens;
+    IO.lastTokens = tokens;
     IO.parse(commandTokens.join(" "), true);
   },
   // parses input and takes the appropriate action
@@ -444,15 +572,16 @@ var IO =
     AGI.unpause();
     if (!input || input == "") {
       cmd_reset(flag_input_received);
+      cmd_assignn(var_unknown_word_no, 0);
     }
     else {
       if (Test.recording)
         Test.recordAction(input);
 
       cmd_set(flag_input_received);
-      cmd_reset(flag_input_parsed);
+      //cmd_reset(flag_input_parsed);
       if (!fromCommandLine) {
-        MultiplayerClient.say(IO.getPrettyVerb(input), false);
+        //MultiplayerClient.say(IO.getPrettyVerb(input), false);
         IO.lastInput = input;
       }
       IO.said = input.replace(/^\s*|\s0*$/, "").toLowerCase().split(" ");
@@ -466,8 +595,17 @@ var IO =
       var word = isNaN(arg * 1) ? arg : WORDS[arg];
       argArr.push(word);
     }
+    
+    var rolIndex = argArr.indexOf("rol");
+    
     var saidText = IO.said.join(" ").toLowerCase().replace(/\srol$/g, "").split(" ");
     var checkText = argArr.join(" ").toLowerCase().replace(/\srol$/g, "").split(" ");
+    
+    if (rolIndex > -1
+    &&  rolIndex < IO.said.length) {
+      saidText = IO.said.slice(0, rolIndex).join(" ").toLowerCase().split(" ");
+      checkText = argArr.slice(0, rolIndex).join(" ").toLowerCase().split(" ");
+    }
 
     if (saidText.length != checkText.length)
       return false;
@@ -476,12 +614,14 @@ var IO =
       if (saidText[i] != checkText[i] && checkText[i] != "anyword")
         return false;
     }
-
+    
     if (checkText.join().indexOf("anyword") == -1) {
       cmd_reset(flag_input_received);
+      cmd_assignn(var_unknown_word_no, 0);
       cmd_set(flag_input_parsed);
       //IO.said = [];
     }
+    cmd_set(flag_input_parsed);
     return true;
   },
   // gets all possible said commands for the current room and exposes them in the UI
@@ -528,8 +668,10 @@ var IO =
     var dict = {};
     for (var verb in IO.commands) {
       var prettyVerb = IO.getPrettyVerb(verb);
-      arr.push(prettyVerb);
-      dict[prettyVerb] = verb;
+      if (prettyVerb) {
+        arr.push(prettyVerb);
+        dict[prettyVerb] = verb;
+      }
     }
     arr.sort();
     for (var i = 0; i < arr.length; i++) {
@@ -541,21 +683,27 @@ var IO =
   },
   // adds an option element to the selectbox
   addOption: function(name, value) {
+    if (!name) {
+      return;
+    }
     if (!value)
       value = name;
     if (name == "&lt;")
       IO.backAction = value;
     if (name == "")
       return;
-    if (Agent.iPhone) {
+    //if (Agent.iPhone) {
       var option = document.createElement("a");
       option.href = "#";
       option.onclick = function(evt) { IO.executeAction(value); Agent.cancelEvent(evt); };
-    }
+      if (value === a_separator) {
+        option.className = "separator";
+      }
+    /*}
     else {
       var option = document.createElement("option");
       option.value = value;
-    }
+    }*/
     option.innerHTML = name.replace(/\brol\b/g, "");
     IO.actions.appendChild(option);
   },
@@ -570,6 +718,21 @@ var IO =
       case a_options:
         IO.showOptions();
         break;
+      case a_inventory:
+        IO.showInventory();
+        break;
+      case a_retype:
+        IO.clearActions();
+        IO.actions.blur();
+        IO.hideActions();
+        cmd_echo_line();
+        return;
+      case a_soundOnOff:
+        IO.clearActions();
+        IO.actions.blur();
+        IO.hideActions();
+        Sound.setOnOff();
+        return;
       case a_avatars:
         IO.showAvatars();
         break;
@@ -589,16 +752,16 @@ var IO =
         break;
       case a_disable_multiplayer:
         IO.hideActions();
-        Multiplayer.disconnect();
-        MultiplayerClient.stop();
-        Text.displayMessage("Multiplayer has been disabled. In order to enable it again, just refresh a browser page.");
+        //Multiplayer.disconnect();
+        //MultiplayerClient.stop();
+        //Text.displayMessage("Multiplayer has been disabled. In order to enable it again, just refresh a browser page.");
         break;
       default:
         if (IO.commands[verb]) {
           IO.showSubActions(verb);
         }
         else {
-          IO.parse(verb);
+          IO.parseCommandLine(verb);
           IO.addOptions();
           IO.actions.blur();
           IO.hideActions();
@@ -672,23 +835,52 @@ var IO =
         for (var i = 0; i < j; i++) {
           token = Utils.Trim(token + " " + parts[i]);
         }
+        if (Array.isArray(IO.prettyVerbs[token])) {
+          for (var k = 0; k < IO.prettyVerbs[token][0].length; k++) {
+            if (IO.prettyVerbs[token][0][k] == vars[var_room_no]) {
+              for (var m = 0; m < IO.prettyVerbs[token][1].length; m++) {
+                if (flags[IO.prettyVerbs[token][1][m]]) {
+                  longestVerb = IO.prettyVerbs[token][2];
+                  break;
+                }
+              }
+              break;
+            }
+          }
+          if (longestVerb.length > 0) {
+            break;
+          }
+          else {
+            return;
+          }
+        }
         if (IO.prettyVerbs[token]) {
           longestVerb = IO.prettyVerbs[token];
           break;
         }
+        if (IO.prettyVerbs[token] === null) {
+          return;
+        }
       }
 
-      // if no prettyVerb was found, leave
-      if (longestVerb == "")
-        longestVerb = token = parts[0];
+      if (longestVerb === null) {
+      }
+      else {
+        // if no prettyVerb was found, leave
+        if (longestVerb == "")
+          longestVerb = token = parts[0];
 
-      // remove the longest verb from the line
-      verbs.push(longestVerb);
-      verb = Utils.Trim(verb.substring(token.length));
+        // remove the longest verb from the line
+        verbs.push(longestVerb);
+        verb = Utils.Trim(verb.substring(token.length));
+      }
     }
     if (verb.length > 0) {
       if (IO.prettyVerbs[verb])
         verbs.push(IO.prettyVerbs[verb])
+      else if (IO.prettyVerbs[verb] === null) {
+        return;
+      }
       else
         verbs.push(verb);
     }
@@ -710,10 +902,72 @@ var IO =
   showLocalActions: function() {
     IO.clearActions();
     IO.addOption("&lt;", a_exit);
-    IO.addOption("more &gt;", a_options);
-    IO.addOption("-------------------", a_separator);
-    IO.parseRoomCommands(IO.commandsLocal);
-    IO.addOptions();
+    if (IO.commandLineIsVisible) {
+      IO.addOption("look");
+      IO.parseRoomCommands(IO.commandsLocal);
+      var examine = IO.commands["examine"];
+      IO.commands = [];
+      IO.commands["examine"] = examine;
+      IO.addOptions();
+      var inventoryCommandsFound = [];
+      for (var inventoryCommand in IO.inventoryCommands) {
+        if (Array.isArray(IO.inventoryCommands[inventoryCommand])) {
+          var inventoryCommandArrayHasAll = false;
+          for (var inventoryCommandArray in IO.inventoryCommands[inventoryCommand]) {
+            if (cmd_has(IO.inventoryCommands[inventoryCommand][inventoryCommandArray])) {
+              inventoryCommandArrayHasAll = true;
+            }
+            else {
+              inventoryCommandArrayHasAll = false;
+              break;
+            }
+          }
+          if (inventoryCommandArrayHasAll) {
+            inventoryCommandsFound.push(inventoryCommand);
+          }
+        }
+        else if (cmd_has(IO.inventoryCommands[inventoryCommand])) {
+          inventoryCommandsFound.push(inventoryCommand);
+        }
+      }
+      if (inventoryCommandsFound.length > 0) {
+        IO.addOption("<hr>", a_separator);
+      }
+      for (var i = 0; i < inventoryCommandsFound.length; i++) {
+        IO.addOption(inventoryCommandsFound[i]);
+      }
+      //IO.addOption("more &gt;", a_options);
+
+      IO.addOption("<hr>", a_separator);
+      var option = document.createElement("a");
+      option.href = "#";
+      option.onclick = function(evt) {
+        IO.actions.blur();
+        IO.hideActions();
+        cmd_print(m36);
+        cmd_print(m37);
+        Agent.cancelEvent(evt);
+      };
+      option.innerHTML = "About".replace(/\brol\b/g, "");
+      IO.actions.appendChild(option);
+      IO.addOption("Hint");
+    }
+    IO.addOption("Save");
+    IO.addOption("Restore");
+    if (IO.commandLineIsVisible) {
+      IO.addOption("Inventory &gt;", a_inventory);
+    }
+    if (Sound.on) {
+      IO.addOption("Sound Off", a_soundOnOff);
+    }
+    else {
+      IO.addOption("Sound On", a_soundOnOff);
+    }
+    IO.addOption("Pause");
+    if (IO.commandLineIsVisible) {
+      IO.addOption("Retype", a_retype);
+      IO.addOption("Help");
+    }
     IO.showActions();
   },
   // shows all locations for this game to quickly jump to
@@ -755,15 +1009,33 @@ var IO =
   showOptions: function() {
     IO.clearActions();
     IO.addOption("&lt;", a_local_verbs);
-    IO.addOption("press F key &gt;", a_f_keys);
-    IO.addOption("select avatar &gt;", a_avatars);
-    if (Utils.ObjHasItems(roomNames))
-      IO.addOption("select location &gt;", a_locations);
-    if (MultiplayerClient.enabled)
-      IO.addOption("disable multiplayer", a_disable_multiplayer);
-    IO.addOption("-------------------", a_separator);
+    //IO.addOption("press F key &gt;", a_f_keys);
+    //IO.addOption("select avatar &gt;", a_avatars);
+    //if (Utils.ObjHasItems(roomNames))
+    //  IO.addOption("select location &gt;", a_locations);
+    //if (MultiplayerClient.enabled)
+    //  IO.addOption("disable multiplayer", a_disable_multiplayer);
     IO.parseRoomCommands(IO.commandsGlobal);
     IO.addOptions();
+    IO.showActions();
+  },
+  showInventory: function() {
+    IO.clearActions();
+    IO.addOption("&lt;", a_local_verbs);
+    for (var i in window.items) {
+      var option = document.createElement("a");
+      option.href = "#";
+      option.dataset.view = (219 + parseInt(i));
+      option.onclick = function(evt) {
+        IO.actions.blur();
+        IO.hideActions();
+        cmd_show_obj(this.dataset.view);
+        Agent.cancelEvent(evt);
+      };
+      option.innerHTML = window["INVENTORY"][i].replace(/\brol\b/g, "");
+      IO.actions.appendChild(option);
+    }
+    
     IO.showActions();
   },
   // shows sub commands, that started with the given verb (such as "look at >")
@@ -772,10 +1044,10 @@ var IO =
     IO.addOption("&lt;", IO.commonCommandsActive ? a_global_verbs : a_local_verbs);
     var arr = [];
     for (var subject in IO.commands[verb])
-      arr.push(subject);
+      arr.push(IO.getPrettyVerb(subject));
     arr.sort();
     for (var i = 0; i < arr.length; i++)
-      IO.addOption(IO.getPrettyVerb(arr[i]), verb + " " + arr[i]);
+      IO.addOption(arr[i], verb + " " + arr[i]);
     IO.showActions();
   }
 }

@@ -20,6 +20,7 @@ var Text =
   cols: 40, // x
   rows: 25, // y
   queue: [],
+  queueInventory: [],
   foregroundColor: 15, // white
   backgroundColor: 0, // black
 
@@ -40,7 +41,11 @@ var Text =
   clear: function() {
     for (var y = 0; y < Text.rows; y++)
       Text.clearLine(y);
-    IO.showCommandLine()
+    if (AGI.screen == s_text_screen) {
+    }
+    else {
+      //IO.showCommandLine();
+    }
   },
   // clear a single line of characters
   clearLine: function(y) {
@@ -65,6 +70,9 @@ var Text =
     el.className = "char";
     if (!isNaN(fg)) el.className += " char_fg_" + fg;
     if (!isNaN(bg)) el.className += " char_bg_" + bg;
+    
+    el.style.zIndex = (9999 - y);
+    
     document.getElementById("canvas").appendChild(el);
     Text.lines[y * Text.cols + x] = el;
   },
@@ -92,6 +100,9 @@ var Text =
       Text.hideInventoryItem();
     }
     Text.clear();
+    if (IO.commandLineIsVisible) {
+      IO.showCommandLine();
+    }
     Text.dialog.style.display = "none";
     Text.messageShown = false;
     if (Text.queue.length > 0)
@@ -104,19 +115,29 @@ var Text =
     }
   },
   // shows a message
-  displayMessage: function(msg) {
+  displayMessage: function(msg, idInventory) {
     Text.queue.push(msg);
+    if (idInventory) {
+      Text.queueInventory.push(idInventory);
+    }
+    else {
+      Text.queueInventory.push(null);
+    }
     if (Text.queue.length == 1 && !Text.messageShown)
       Text.nextMessage();
   },
+  nextMessageTimeout: null,
   nextMessage: function() {
     Text.queue.reverse();
     var msg = Text.queue.pop();
     Text.queue.reverse();
+    Text.queueInventory.reverse();
+    var idInventory = Text.queueInventory.pop();
+    Text.queueInventory.reverse();
 
     if (Test.playing)
       return Test.displayMessage(msg);
-    msg = msg.replace(/^\s+|\s+$/, "");
+    //msg = msg.replace(/^\s+|\s+$/, "");
 
     msg = Text.parseMessage(msg);
 
@@ -132,6 +153,9 @@ var Text =
 
     // clear a previous message
     Text.clear();
+    if (IO.commandLineIsVisible) {
+      IO.showCommandLine();
+    }
 
     // get the width, height, x and y position for the dialog
     var height = lines.length;
@@ -149,8 +173,20 @@ var Text =
     Text.dialog.style.left = ((((x - 1) * 8 * AGI.zoom) + AGI.zoom) - 6) + "px";
     Text.dialog.style.top = ((((y - 2) * 8 * AGI.zoom) - AGI.zoom) + 8) + "px";
     Text.dialog.style.width = ((((width + 2) * 8 * AGI.zoom) + AGI.zoom) + 4) + "px";
-    Text.dialog.style.height = ((((height + 2) * 8 * AGI.zoom) - AGI.zoom) - 11) + "px";
+    Text.dialog.style.height = ((((height + 2) * 8 * AGI.zoom) - AGI.zoom) - 7) + "px";
     Text.messageShown = true;
+    
+    if (idInventory) {
+      // load a view with loop 0 and cel 0 and position it center/bottom
+      var view = new View();
+      view.load(idInventory);
+      view.show();
+      view.setPriority(15);
+      var x = Math.round(80 - (view.width() / 2));
+      var y = 168;
+      view.position(x, y);
+      Text.visibleInventoryItem = view;
+    }
 
     //    if (!cmd_isset(15)) {
     AGI.pause();
@@ -159,17 +195,45 @@ var Text =
     //        setTimeout(AGI.unpause, seconds * 1000);
     //      }
     //    }
+    
+    
+    if (!cmd_isset(15)) {
+      var seconds = vars[var_window_close_time];
+      if (seconds > 0) {
+        seconds = seconds / 2;
+        Text.nextMessageTimeout = setTimeout(function() {
+          if (waiting) {
+            if (!Text.messageShown) {
+              IO.key_pressed = true;
+            }
+            jumpTo.count = 0;
+            jumptoLine = waitLineNr;
+            jumpTo.lastLogic = AGI.current_logic;
+            waiting = false;
+            IO.cancelNextKeyClick = false;
+            IO.onClick();
+          }
+        }, seconds * 1000);
+        vars[var_window_close_time] = 0;
+      }
+    }
   },
   // breaks up a string in lines
   getLines: function(msg, cols) {
     var lines = [];
     while (msg.length > cols || msg.indexOf('\n') != -1) {
       var lineBreak = Text.getLineBreak(msg, cols);
-      var line = msg.substr(0, lineBreak).replace(/^\s|\s$/g, "");
+      var line = msg.substr(0, lineBreak);//.replace(/^\s|\s$/g, "");
+      if (line.indexOf('\n') != -1) {
+        line = line.replace(/\n$/g, "");
+      }
+      else {
+        line = line.replace(/\s$/g, "");
+      }
       msg = msg.substr(lineBreak);
       lines.push(line);
     }
-    lines.push(msg.replace(/^\s|\s$/g, ""));
+    lines.push(msg);//.replace(/^\s|\s$/g, ""));
     return lines;
   },
   // gets the best linebreak position
@@ -177,10 +241,11 @@ var Text =
     line = line.substr(0, cols);
     var max = line.indexOf('\n');
     if (max == -1) {
-      var breakChars = [' ', '.', '-', ','];
+      var breakChars = [' ', '"', '.', '-', ','];
       for (var i = 0; i < breakChars.length; i++) {
         var chr = breakChars[i];
         max = Math.max(line.lastIndexOf(chr), max);
+        break;
       }
     }
     return max + 1;
@@ -204,7 +269,8 @@ var Text =
     if (!msg)
       msg = "";
     msg = msg.replace(/\\/g, "");
-    msg = msg.replace(/%s(\d+)/g, function(a, b) { return strings[b]; });
+    //msg = msg.replace(/%s(\d+)/g, function(a, b) { return strings[b]; });
+    msg = msg.replace(/%s(\d+)/g, function(a, b) { return MESSAGES[AGI.current_logic][strings[b]]; });
     msg = msg.replace(/%v(\d+)/g, function(a, b) { return vars[b]; });
     msg = msg.replace(/%m(\d+)/g, function(a, b) { return MESSAGES[AGI.current_logic][b]; });
     msg = msg.replace(/%g(\d+)/g, function(a, b) { return MESSAGES[0][b]; });
@@ -218,16 +284,16 @@ var Text =
     var description = VIEWS[id][0];
     if (!description)
       return Text.displayMessage("There's nothing to see.");
-    Text.displayMessage(description);
+    Text.displayMessage(description, id);
     // load a view with loop 0 and cel 0 and position it center/bottom
-    var view = new View();
+    /*var view = new View();
     view.load(id);
     view.show();
     view.setPriority(15);
     var x = Math.round(80 - (view.width() / 2));
     var y = 168;
     view.position(x, y);
-    Text.visibleInventoryItem = view;
+    Text.visibleInventoryItem = view;*/
   },
   // hides a visible inventory item
   hideInventoryItem: function() {

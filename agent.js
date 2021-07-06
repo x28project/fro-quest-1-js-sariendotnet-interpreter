@@ -20,7 +20,7 @@ var Agent =
   // identify Internet Explorer
   IE: (navigator.appName == "Microsoft Internet Explorer"),
   OP: (navigator.appName == "Opera"),
-  iPhone: (navigator.userAgent.indexOf("iPhone") != -1),
+  iPhone: false,//(navigator.userAgent.indexOf("iPhone") != -1),
 
   // creates an xmlhttp object
   // @returns: an xhr object

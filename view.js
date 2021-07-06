@@ -54,6 +54,7 @@ View.prototype =
   id: 0,
   x: 0,
   y: 0,
+  yPrev: 0,
   loop: 0,
   cel: 0,
   priority: 0,
@@ -84,6 +85,8 @@ View.prototype =
   cycle_type: 0,
 
   flag_to_set: -1,
+  flag_to_set_loop: -1,
+  flag_to_set_move: -1,
 
   destX: 0,
   destY: 0,
@@ -106,7 +109,7 @@ View.prototype =
   },
 
   width: function() {
-    return Math.round(this.rootElement.offsetWidth / (2 * AGI.zoom));
+    return Math.round(this.rootElement.offsetWidth / (2 * AGI.zoom)) - 1;
   },
 
   height: function() {
@@ -137,6 +140,7 @@ View.prototype =
     if (!this.FIXED_PRIORITY) {
       // -1 to fix pq1 dooley desk bug
       this.setZindex(this.y - 1);
+      //this.setZindex(this.y);
     }
   },
 
@@ -144,6 +148,11 @@ View.prototype =
     this.priority = prio;
     var z = prio == 0 ? 1 : (prio - 1) * 12;
     this.setZindex(z);
+      
+      var tempFontSize = parseInt(window.getComputedStyle(this.rootElement, null).getPropertyValue('font-size'));
+      if (tempFontSize < 5) {
+        this.setZindex(z - tempFontSize);
+      }
   },
 
   setZindex: function(z) {
@@ -169,7 +178,12 @@ View.prototype =
   },
 
   show: function() {
-    document.getElementById("canvas").appendChild(this.rootElement);
+    if (this.rootElement.className.indexOf("o0") > -1) {
+        document.getElementById("canvas").insertBefore(this.rootElement, document.getElementById("canvas").firstChild);
+    }
+    else {
+      document.getElementById("canvas").appendChild(this.rootElement);
+    }
     this.rootElement.style.visibility = "visible";
   },
 
@@ -192,7 +206,7 @@ View.prototype =
     if (!this.DIDNT_MOVE) {
       this.position(this.x, this.y);
     }
-    var frameClass = ["o", this.index, " view V", this.id, " V", this.id, this.loop, this.cel].join("");
+    var frameClass = ["o", this.index, " view V", this.id, " V", this.id, this.loop, "_", this.cel].join("");
     if (this.oldClassName != frameClass)
       this.rootElement.className = frameClass;
 
@@ -409,9 +423,13 @@ View.prototype =
           if (++cel != lastCel)
             break;
         }
-        if (this.flag_to_set > -1) {
+        /*if (this.flag_to_set > -1) {
           cmd_set(this.flag_to_set);
           this.flag_to_set = -1;
+        }*/
+        if (this.flag_to_set_loop > -1) {
+          cmd_set(this.flag_to_set_loop);
+          this.flag_to_set_loop = -1;
         }
         this.CYCLING = false;
         this.direction = 0;
@@ -422,9 +440,13 @@ View.prototype =
           if (--cel)
             break;
         }
-        if (this.flag_to_set > -1) {
+        /*if (this.flag_to_set > -1) {
           cmd_set(this.flag_to_set);
           this.flag_to_set = -1;
+        }*/
+        if (this.flag_to_set_loop > -1) {
+          cmd_set(this.flag_to_set_loop);
+          this.flag_to_set_loop = -1;
         }
         this.CYCLING = false;
         this.direction = 0;
@@ -451,6 +473,7 @@ View.prototype =
 
     x = old_x = this.x;
     y = old_y = this.y;
+    this.yPrev = y;
 
     /* If object has moved, update its position */
     if (true || this.UPDATE_POS) {
@@ -523,7 +546,9 @@ View.prototype =
         vars[var_object_touching_edge] = this.index;
         vars[var_object_edge_code] = border;
       }
-      if (this.motion_type == mt_move_obj) {
+      if (this.motion_type == mt_move_obj
+      &&  old_x !== 0
+      &&  old_y !== 0) {
         this.inDestination();
       }
     }
@@ -594,8 +619,9 @@ View.prototype =
       if (obj1.x + obj1.width() < obj2.x || obj1.x > obj2.x + obj2.width())
         return false;
 
-      if (obj1.y == obj2.y)
+      if (obj1.y == obj2.y) {
         return true;
+      }
 
       return false;
     }
@@ -603,10 +629,14 @@ View.prototype =
     // check dynamic objects
     for (var i = 0; i <= AGI.highestObjIndex; i++) {
       var obj = objects[i];
-      if (!obj || obj.index >= 100)
+      if (!obj)// || obj.index >= 100)
         continue;
-      if (checkCollisionWithObject(this, obj))
+      if (this.index == obj.index) {
+        continue;
+      }
+      if (checkCollisionWithObject(this, obj)) {
         return true;
+      }
     }
     return false;
   },
@@ -635,6 +665,10 @@ View.prototype =
 
     if (this.priority != 15) {
 
+      var priWater = [];
+      for (i = 0, w = this.width(); i < w; i++) {
+        priWater.push(0);
+      }
       for (i = 0, w = this.width(); i < w; i++) {
         pri = AGI.getPriority(this.x + i, this.y) - 1;
 
@@ -646,7 +680,16 @@ View.prototype =
 
         /* water surface */
         if (pri == 3) {
-          water = 1;
+          priWater[i] = 1;
+          var priWaterAll1 = true;
+          for (var j = 0, priWaterLength = priWater.length; j < priWaterLength; j++) {
+            if (priWater[j] === 0) {
+              priWaterAll1 = false;
+            }
+          }
+          if (priWaterAll1){
+            water = 1;
+          }
           continue;
         }
 

@@ -1,0 +1,23 @@
+{
+  "name": "fro-quest-1-js-sariendotnet-interpreter",
+  "version": "1.1.0",
+  "description": "Fro Quest (FQ1) Sarien.net (sariendotnet) interpreter",
+  "keywords": [
+    "Fro",
+    "Quest",
+    "Fro Quest",
+    "FroQuest",
+    "FQ",
+    "FQ1",
+    "X28 Project",
+    "X28Project",
+    "Sierra",
+    "AGI",
+    "Sarien.net",
+    "sariendotnet",
+    "Sarien"
+  ],
+  "private": true,
+  "author": "X28 Project <x28project@gmail.com> (http://www.x28project.com)",
+  "license": "LGPL-3.0-or-later"
+}

@@ -44,6 +44,8 @@ function cmd_new_room(roomNr) {
   cmd_assignn(var_object_edge_code, 0);
   cmd_assignn(var_ego_view_no, getEgo().id);
   cmd_reset(flag_input_received);
+  IO.key_pressed = false;
+  cmd_assignn(var_unknown_word_no, 0);
   cmd_load_logics(roomNr);
   IO.currentRoomLogics = {};
 
@@ -287,6 +289,11 @@ function cmd_position(i, x, y) {
   // fixes room bounce
   if (i == 0 && y < AGI.horizon)
     y = AGI.horizon + 1;
+  var objWidth = obj.width();
+  if (i == 0
+  &&  (x + objWidth) > AGI.screen_width) {
+    x = x - objWidth;
+  }
   obj.position(x, y);
   obj.oldX = x;
   obj.oldY = y;
@@ -311,6 +318,12 @@ function cmd_erase(n) {
   var obj = getObject(n);
   obj.hide();
   obj.DRAWN = false;
+  if (obj === getEgo()) {
+    var ego = getEgo();
+    ego.direction = 0;
+    vars[var_ego_dir] = 0;
+    ego.motion_type = mt_normal_motion;
+  }
 }
 function cmd_get_posn(n, vx, vy) {
   var obj = getObject(n);
@@ -328,10 +341,12 @@ function cmd_stop_cycling(n) {
 function cmd_normal_cycle(n) {
   var obj = getObject(n);
   obj.cycle_type = ct_normal_cycle;
+  obj.CYCLING = true;
 }
 function cmd_reverse_cycle(n) {
   var obj = getObject(n);
   obj.cycle_type = ct_reverse_cycle;
+  obj.CYCLING = true;
 }
 function cmd_end_of_loop(i, flag) {
   cmd_reset(flag);
@@ -339,7 +354,8 @@ function cmd_end_of_loop(i, flag) {
   obj.ANIMATED = true;
   obj.UPDATE = true;
   obj.CYCLING = true;
-  obj.flag_to_set = flag;
+  //obj.flag_to_set = flag;
+  obj.flag_to_set_loop = flag;
   obj.cycle_type = ct_end_of_loop;
 };
 function cmd_reverse_loop(i, flag) {
@@ -348,7 +364,8 @@ function cmd_reverse_loop(i, flag) {
   obj.ANIMATED = true;
   obj.UPDATE = true;
   obj.CYCLING = true;
-  obj.flag_to_set = flag;
+  //obj.flag_to_set = flag;
+  obj.flag_to_set_loop = flag;
   obj.cycle_type = ct_reverse_loop;
 };
 function cmd_cycle_time(n, m) {
@@ -430,8 +447,11 @@ function cmd_step_time(n, m) {
   obj.step_time_count = vars[m];
 };
 function cmd_move_obj(n, x, y, step_size, flag) {
-  cmd_reset(flag);
   var obj = getObject(n);
+  //if (obj.didnt_move_count > 0) {
+  //  return;
+  //}
+  cmd_reset(flag);
   obj.UPDATE = true;
   obj.parm3 = obj.step_size;
   if (step_size > 0)
@@ -529,37 +549,122 @@ function cmd_distance(n, m, d) {
   else
     vars[d] = 255;
 }
-function cmd_add_to_pic(view, loop, cel, x, y, prio, margin) {
-  var obj = new View();
-  obj.FIXED_PRIORITY = true;
-  obj.load(view);
-  obj.loop = loop;
-  obj.cel = cel;
-  obj.position(x, y);
-  obj.setPriority(prio);
-  obj.show();
-  obj.update();
-  obj.margin = margin;
-  AGI.picture.addStaticObject(obj);
+var cmd_add_to_picX1 = [];
+var cmd_add_to_picX2 = [];
+function cmd_add_to_picReset() {
+  cmd_add_to_picX1 = [];
+  cmd_add_to_picX2 = [];
+}
+//function cmd_add_to_pic(view, loop, cel, x, y, prio, margin) {
+function cmd_add_to_pic(view, loop, cel, x, y, prio, margin, append, xArray) {
+  var obj;
+  if (append
+  &&  xArray
+  &&  cmd_add_to_picX1[x]
+  &&  cmd_add_to_picX2[x]) {
+    cmd_add_to_picX1[x].cel = cel;
+    cmd_add_to_picX1[x].position(x, y);
+    cmd_add_to_picX1[x].update();
+    if (cmd_add_to_picX2[x]) {
+      cmd_add_to_picX2[x].rootElement.style.top = 0;
+      cmd_add_to_picX2[x].rootElement.style.height = AGI.zoom * (y + 1) + "px";
+    }
+  }
+  else {
+    obj = new View();
+    obj.FIXED_PRIORITY = true;
+    obj.load(view);
+    obj.loop = loop;
+    obj.cel = cel;
+    obj.position(x, y);
+    obj.setPriority(prio);
+    obj.show();
+    obj.update();
+    obj.margin = margin;
+    AGI.picture.addStaticObject(obj);
+  }
   // always place static objects at the beginning of the canvas. Fixes sq1 barman z-index issue with same prio as static objects
-  var parent = obj.rootElement.parentNode;
-  parent.insertBefore(obj.rootElement, parent.firstChild);
+  //var parent = obj.rootElement.parentNode;
+  if (append) {
+    if (xArray
+    &&  cmd_add_to_picX1[x]
+    &&  cmd_add_to_picX2[x]) {
+    }
+    else {
+      if (xArray) {
+        if (cmd_add_to_picX1[x]) {
+          obj.rootElement.style.backgroundColor = "#8A0000";
+          obj.imageElement.parentNode.removeChild(obj.imageElement);
+          cmd_add_to_picX2[x] = obj;
+        }
+        else {
+          cmd_add_to_picX1[x] = obj;
+        }
+      }
+      var parent = obj.rootElement.parentNode;
+      parent.appendChild(obj.rootElement);
+    }
+  }
+  else {
+    var parent = obj.rootElement.parentNode;
+    parent.insertBefore(obj.rootElement, parent.firstChild);
+  }
 };
-function cmd_add_to_pic_v(view, loop, cel, x, y, prio) {
-  cmd_add_to_pic(vars[view], vars[loop], vars[cel], vars[x], vars[y], vars[prio]);
+//function cmd_add_to_pic_v(view, loop, cel, x, y, prio) {
+function cmd_add_to_pic_v(view, loop, cel, x, y, prio, margin, append, xArray) {
+  if (append) {
+    cmd_add_to_pic(vars[view], vars[loop], vars[cel], vars[x], vars[y], vars[prio], margin, append, xArray);
+  }
+  else {
+    cmd_add_to_pic(vars[view], vars[loop], vars[cel], vars[x], vars[y], vars[prio], margin);
+  }
 };
-function cmd_call(i) {
+//function cmd_call(i) {
+function cmd_call(i, switches, reCall) {
   // if a new room is loaded, do not execute any deeper logics (they could act upon the new_room flag -> pq1 newspaper bug)
-  if (AGI.new_room > 0)
+  if (AGI.new_room > 0) {
     return;
+  }
   cmd_load_logics(i);
   var prevLogic = AGI.current_logic;
+  if (AGI.screen === s_text_screen) {
+    prevLogic = AGI.previous_logic_text_screen;
+  }
+  AGI.previous_logic_text_screen = AGI.current_logic;
   AGI.current_logic = i;
   jumpTo(0);
+  if (reCall) {
+  }
+  else {
+    AGI.cmdCallStack.push(i);
+  }
+  if (switches
+  &&  Array.isArray(switches)) {
+    AGI.cmdCallStackSwitches.pop();
+    AGI.cmdCallStackSwitches.push(switches);
+  }
+  if (reCall) {
+  }
+  else {
+    AGI.cmdCallStackSwitches.push([0]);
+  }
   window["logic" + i]();
-  AGI.current_logic = prevLogic;
+  if (waiting == false) {
+    AGI.cmdCallStack.pop();
+    AGI.cmdCallStackSwitches.pop();
+  }
+  if (AGI.screen === s_text_screen) {
+  }
+  else {
+    AGI.current_logic = prevLogic;
+  }
 }
-function cmd_call_v(vn) {
+//function cmd_call_v(vn) {
+function cmd_call_v(vn, switches) {
+  if (switches) {
+    cmd_call(vars[vn], switches);
+    return;
+  }
   cmd_call(vars[vn]);
 }
 function cmd_clear_lines(y1, y2, color) {
@@ -581,6 +686,10 @@ function cmd_controller(cn) {
   return false;
 };
 function cmd_said() {
+  if (flags[flag_input_parsed]
+  ||  !flags[flag_input_received]) {
+    return;
+  }
   return IO.hasSaid(arguments);
 };
 function cmd_show_pic() {
@@ -662,9 +771,11 @@ function cmd_have_key() {
 }
 function cmd_prevent_input() {
   IO.accept_input = false;
+  IO.hideCommandLine();
 }
 function cmd_accept_input() {
   IO.accept_input = true;
+  IO.showCommandLine();
 }
 function cmd_load_logics_v(vn) {
   cmd_load_logics(vars[vn]);
@@ -681,14 +792,24 @@ function cmd_set_string(n, s) {
   strings[n] = s;
 }
 function cmd_graphics() {
+  if (AGI.screen !== s_graphics_screen) {
+    IO.key_pressed = false;
+  }
   AGI.screen = s_graphics_screen;
   document.getElementById("canvas").className = "";
-  if (!Text.messageShown)
+  if (!Text.messageShown) {
     Text.clear();
+    if (IO.commandLineIsVisible) {
+      IO.showCommandLine();
+    }
+  }
 }
 function cmd_text_screen() {
-  Text.hideMessage();
+  if (AGI.screen !== s_text_screen) {
+    IO.key_pressed = false;
+  }
   AGI.screen = s_text_screen;
+  Text.hideMessage();
   document.getElementById("canvas").className = "text-screen";
 }
 function cmd_display(row, col, msg) {
@@ -776,14 +897,14 @@ function cmd_show_obj_v(n) {
   Text.showInventoryItem(vars[n]);
 }
 function cmd_status_line_on() {
-  IO.showCommandLine();
+  document.getElementById("menu").style.display = "block";
 }
 function cmd_status_line_off() {
-  IO.hideCommandLine();
+  document.getElementById("menu").style.display = "none";
 }
 // quit takes you to the homepage
 function cmd_quit() {
-  document.location.href = "/";
+  //document.location.href = "/";
 }
 function cmd_save_game() {
   State.save();
@@ -792,11 +913,17 @@ function cmd_restore_game() {
   State.restore();
 }
 function cmd_restart_game() {
-  document.location.href = document.location.href.replace(/#.*/gi, "");
+  //document.location.href = document.location.href.replace(/#.*/gi, "");
 }
 function cmd_echo_line() {
-  IO.input = IO.lastInput;
-  IO.showCommandLine();
+  /*IO.input = IO.lastInput;
+  if (IO.commandLineIsVisible) {
+    IO.showCommandLine();
+  }*/
+  var input = window.prompt("Enter input",IO.lastInput);
+  if (input && Utils.Trim(input).length != 0) {
+    IO.parseCommandLine(input);
+  }
 }
 // Stores the room number of object n in variable m.
 // In this implementation, returns 255 if you have it, otherwise returns the current room no
@@ -812,7 +939,27 @@ function cmd_discard_view() {
 }
 function cmd_discard_view_v() {
 }
-function cmd_shake_screen() {
+function cmd_shake_screen(a) {
+  i = 0;
+  var canvas = document.getElementById("canvas");
+  for (var i = 0; i < a; i++) {
+    setTimeout(function() {
+      canvas.style.marginLeft = "-10px";
+      canvas.style.marginTop = "-10px";
+      setTimeout(function() {
+        canvas.style.marginLeft = "0px";
+        canvas.style.marginTop = "0px";
+        setTimeout(function() {
+          canvas.style.marginLeft = "-10px";
+          canvas.style.marginTop = "-10px";
+          setTimeout(function() {
+            canvas.style.marginLeft = "0px";
+            canvas.style.marginTop = "0px";
+          }, 50);
+        }, 50);
+      }, 50);
+    }, i * 200);
+  }
 }
 function cmd_script_size() {
 }
